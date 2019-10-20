@@ -17,6 +17,7 @@ class User(db.Model, UserMixin):
     password = db.Column(db.String(60), nullable=False)
     products = db.relationship('Product', backref='author', lazy=True)
     cart = db.relationship('Cart', backref='author', lazy=True)
+    bills = db.relationship('Bill', backref='author', lazy=True)
 
     def get_reset_token(self, expires_sec=1800):
         s = Serializer(app.config['SECRET_KEY'], expires_sec)
@@ -44,6 +45,7 @@ class Product(db.Model):
     image_url = db.Column(db.String(100), nullable=False)
     user_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
     cart = db.relationship('Cart', backref='product', lazy=True)
+    bill_products = db.relationship('Bill_Products', backref='product', lazy=True)
 
     def __repr__(self):
         return f"Product('{self.name}', '{self.date_created}' , '{self.price}')"
@@ -56,3 +58,27 @@ class Cart(db.Model):
 
     def __repr__(self):
         return f"Cart('{self.user_id}', '{self.product_id}')"
+
+
+class Bill(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    bill_products = db.relationship('Bill_Products', backref='bill', lazy=True)
+    user_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
+    total = db.Column(db.Float, nullable=False)
+    discount = db.Column(db.Float, nullable=False)
+    final_price = db.Column(db.Float, nullable=False)
+    name = db.Column(db.String(100), nullable=False)
+    phonenumber = db.Column(db.String(10), nullable=False)
+    date_created = db.Column(db.DateTime, nullable=False, default=datetime.utcnow)
+
+    def __repr__(self):
+        return f"Bill('{self.user_id}', '{self.total}')"
+
+
+class Bill_Products(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    bill_id = db.Column(db.Integer, db.ForeignKey('bill.id'), nullable=False)
+    product_id = db.Column(db.Integer, db.ForeignKey('product.id'), nullable=False)
+
+    def __repr__(self):
+        return f"Bill_Product('{self.bill_id}','{self.product_id}')"
