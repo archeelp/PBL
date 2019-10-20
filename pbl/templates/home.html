@@ -6,7 +6,7 @@
     <p class="lead">This project is made opensource with the view to reduce the shedding of tree due to paper used in printing bills</p>
     <p class="lead">More data is coming soon ... Stay Tuned</p>
     {% if not current_user.is_authenticated %}
-      <a href="{{ url_for('register') }}" class="btn btn-primary btn-lg">Register Now!</a>
+      <a href="{{ url_for('register') }}" class="btn btn-primary btn-lg bg-dark">Register Now!</a>
     {% endif %}
   </header>
 {% endblock content %}

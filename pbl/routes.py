@@ -5,14 +5,20 @@ from flask import render_template, url_for, flash, redirect, request, abort
 from pbl import app, db, bcrypt, mail
 from pbl.forms import (RegistrationForm, LoginForm, UpdateAccountForm,
                              ProductForm, RequestResetForm, ResetPasswordForm)
-from pbl.models import User, Product ,Cart
+from pbl.models import User, Product ,Cart ,Bill,Bill_Products
 from flask_login import login_user, current_user, logout_user, login_required
 from flask_mail import Message
+from datetime import datetime
 
 
 @app.route("/")
 @app.route("/home")
 def home():
+    bills=Bill.query.filter().all()
+    bills=list(filter(lambda x: float((x.date_created - datetime.now()).total_seconds())<604800,bills))
+    newbill={"Mon":0,"Tue":0,"Wed":0,"Thu":0,"Fri":0,"Sat":0,"Sun":0}
+    for x in bills:
+        newbill[x.date_created.strftiime("%a")]+=1
     return render_template('home.html')
 
 
