@@ -1,0 +1,12 @@
+{% extends "layout.html" %}
+{% block content %}
+  <header class="jumbotron my-4">
+    <h1 class="display-3">We Are PBL</h1>
+    <p class="lead">We are providing opensource paperless billing system</p>
+    <p class="lead">This project is made opensource with the view to reduce the shedding of tree due to paper used in printing bills</p>
+    <p class="lead">More data is comming soon ...</p>
+    {% if not current_user.is_authenticated %}
+      <a href="{{ url_for('register') }}" class="btn btn-primary btn-lg">Register Now!</a>
+    {% endif %}
+  </header>
+{% endblock content %}
