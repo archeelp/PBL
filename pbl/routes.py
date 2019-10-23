@@ -59,6 +59,7 @@ def login():
 
 
 @app.route("/logout")
+@login_required
 def logout():
     logout_user()
     return redirect(url_for('home'))
@@ -123,9 +124,24 @@ def add_to_cart(product_id):
     db.session.add(cart)
     db.session.commit()
     flash('Product added to cart', 'success')
-    return redirect(url_for('all_products'))
+    next_page = request.args.get('next')
+    return redirect(next_page) if next_page else redirect(url_for('cart'))
+
+
+@app.route("/removefromcart/<int:cart_id>", methods=['GET','POST'])
+@login_required
+def remove_from_cart(cart_id):
+    cart = Cart.query.filter_by(product_id=cart_id)[0]
+    if cart.author != current_user:
+        abort(403)
+    db.session.delete(cart)
+    db.session.commit()
+    flash('Product deleted from cart', 'success')
+    return redirect(url_for('cart'))
+
 
 @app.route("/allproducts")
+@login_required
 def all_products():
     page = request.args.get('page', 1, type=int)
     products = Product.query.filter_by(author=current_user)\
@@ -133,12 +149,15 @@ def all_products():
         .paginate(page=page, per_page=16)
     return render_template('all_products.html', products=products)
 
+
 @app.route("/cart")
+@login_required
 def cart():
     products_id = Cart.query.filter_by(author=current_user)
     pids =[pid.product_id for pid in products_id]
-    products = [ (Product.query.get(pid),pids.count(pid)) for pid in set(pids)]
+    products = [ (Product.query.get(pid),pids.count(pid),pid) for pid in set(pids)]
     return render_template('cart.html', products=products)
+
 
 @app.route("/product/<int:product_id>")
 @login_required
@@ -197,6 +216,7 @@ If you did not make this request then simply ignore this email and no changes wi
 
 
 @app.route("/reset_password", methods=['GET', 'POST'])
+@login_required
 def reset_request():
     if current_user.is_authenticated:
         return redirect(url_for('home'))
@@ -210,6 +230,7 @@ def reset_request():
 
 
 @app.route("/reset_password/<token>", methods=['GET', 'POST'])
+@login_required
 def reset_token(token):
     if current_user.is_authenticated:
         return redirect(url_for('home'))

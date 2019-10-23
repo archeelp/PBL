@@ -74,6 +74,10 @@
             <p class="card-text">{{ product[0].info }}</p>
             <p class="card-text">Price : ₹ {{ product[0].price }}</p>
             <p class="card-text">Count : {{ product[1] }}</p>
+            <div class="card-footer">
+              <a href="{{ url_for('add_to_cart', product_id=product[2]) }}" class="btn btn-primary">Add</a>
+              <a href="{{ url_for('remove_from_cart', cart_id=product[2] )}} " class="btn btn-danger">Remove</a>
+            </div>
           </div>
         </div>
     </div>
