@@ -194,7 +194,10 @@ def confirmed():
             #then add the cart items of current user to bill products and then commit
             #then clear the cart of current user
             #and we are done here
-            #also we can create an additoinal route to view all the bills
+            #also we can create an additional route to view all the bills
+            #also we can create an additional route to view a specific the bills
+            #also there is a need to link the graphs to the bills
+            #at the end of this function we need to send mail to user with a link to view specific bill page using smtp
             flash('Bill created successfully', 'success')
             return redirect(url_for('home'))
 
