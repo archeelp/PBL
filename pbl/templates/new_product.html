@@ -32,6 +32,19 @@
                 {% endif %}
             </div>
             <div class="form-group">
+                {{ form.discount.label(class="form-control-label") }}
+                {% if form.discount.errors %}
+                    {{ form.discount(class="form-control form-control-lg is-invalid") }}
+                    <div class="invalid-feedback">
+                        {% for error in form.discount.errors %}
+                            <span>{{ error }}</span>
+                        {% endfor %}
+                    </div>
+                {% else %}
+                    {{ form.discount(class="form-control form-control-lg") }}
+                {% endif %}
+            </div>
+            <div class="form-group">
                 {{ form.image_url.label(class="form-control-label") }}
                 {% if form.image_url.errors %}
                     {{ form.image_url(class="form-control form-control-lg is-invalid") }}

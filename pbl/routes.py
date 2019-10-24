@@ -4,7 +4,7 @@ from PIL import Image
 from flask import render_template, url_for, flash, redirect, request, abort
 from pbl import app, db, bcrypt, mail
 from pbl.forms import (RegistrationForm, LoginForm, UpdateAccountForm,
-                             ProductForm, RequestResetForm, ResetPasswordForm)
+                             ProductForm, RequestResetForm, ResetPasswordForm ,BillingForm)
 from pbl.models import User, Product ,Cart ,Bill,Bill_Products
 from flask_login import login_user, current_user, logout_user, login_required
 from flask_mail import Message
@@ -105,11 +105,12 @@ def account():
 def new_product():
     form = ProductForm()
     if form.validate_on_submit():
-        product = Product(name=form.name.data, price = form.price.data, info = form.info.data, image_url= form.image_url.data, author=current_user)
+        product = Product(name=form.name.data,discount=form.discount.data if form.discount.data else 0.0, price = form.price.data, info = form.info.data, image_url= form.image_url.data, author=current_user)
         db.session.add(product)
         db.session.commit()
         flash('Your product has been added', 'success')
         return redirect(url_for('home'))
+    form.discount.data=0.0
     return render_template('new_product.html', title='New Product',
                            form=form, legend='New Product')
 
@@ -147,7 +148,7 @@ def all_products():
     products = Product.query.filter_by(author=current_user)\
         .order_by(Product.date_created.desc())\
         .paginate(page=page, per_page=16)
-    return render_template('all_products.html', products=products)
+    return render_template('all_products.html', products=products,title="All Products")
 
 
 @app.route("/cart")
@@ -155,8 +156,48 @@ def all_products():
 def cart():
     products_id = Cart.query.filter_by(author=current_user)
     pids =[pid.product_id for pid in products_id]
-    products = [ (Product.query.get(pid),pids.count(pid),pid) for pid in set(pids)]
-    return render_template('cart.html', products=products)
+    products = [ (Product.query.get(pid),pids.count(pid)) for pid in set(pids)]
+    mrp,n,t=0,0,0
+    for product in products:
+        mrp+=product[0].price*product[1]
+        n+=product[1]
+        t+=product[0].price*product[1]*(1-product[0].discount*0.01)
+    d=round((1-t/mrp)*100,2)
+    return render_template('cart.html',title="Cart", products=products,mrp=mrp,n=n,t=t,d=d)
+
+
+@app.route("/cart/proceed",methods=["POST"])
+@login_required
+def proceed():
+    discount=0.0
+    if request.method == "POST":
+        discount=float(request.form.get('discount'))
+    form = BillingForm()
+    products_id = Cart.query.filter_by(author=current_user)
+    pids =[pid.product_id for pid in products_id]
+    products = [ (Product.query.get(pid),pids.count(pid)) for pid in set(pids)]
+    mrp,n,t=0,0,0
+    for product in products:
+        mrp+=product[0].price*product[1]
+        n+=product[1]
+        t+=product[0].price*product[1]*(1-product[0].discount*0.01)
+    d=round((1-t/mrp)*100,2)
+    return render_template('proceed.html',form=form,products=products,mrp=mrp,n=n,t=t,d=d,discount=discount,title="Summary",legend="Summary")
+
+
+@app.route("/cart/confirmed",methods=["POST"])
+@login_required
+def confirmed():
+    form=BillingForm()
+    if form.validate_on_submit():
+            #first crete a bill and then commit to db session
+            #then add the cart items of current user to bill products and then commit
+            #then clear the cart of current user
+            #and we are done here
+            #also we can create an additoinal route to view all the bills
+            flash('Bill created successfully', 'success')
+            return redirect(url_for('home'))
+
 
 
 @app.route("/product/<int:product_id>")

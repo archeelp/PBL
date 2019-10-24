@@ -40,6 +40,7 @@ class Product(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     name = db.Column(db.String(100), nullable=False)
     price = db.Column(db.Float, nullable=False)
+    discount = db.Column(db.Float,nullable=False,default=0.0)
     date_created = db.Column(db.DateTime, nullable=False, default=datetime.utcnow)
     info = db.Column(db.Text, nullable=False , default="No Information Available")
     image_url = db.Column(db.String(100), nullable=False)
@@ -68,6 +69,7 @@ class Bill(db.Model):
     discount = db.Column(db.Float, nullable=False)
     final_price = db.Column(db.Float, nullable=False)
     name = db.Column(db.String(100), nullable=False)
+    email = db.Column(db.String(120), unique=True, nullable=False)
     phonenumber = db.Column(db.String(10), nullable=False)
     date_created = db.Column(db.DateTime, nullable=False, default=datetime.utcnow)
 

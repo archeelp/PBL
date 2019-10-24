@@ -61,28 +61,7 @@
           {% block content %}{% endblock %}
         </div>
       </div>
-    <div class="row text-center">
-    {% for product in products %}
-    <div class="col-lg-3 col-md-6 mb-4">
-        <div class="card h-100">
-          <br>
-          <div class="text-center">
-              <img class="card-img-top rounded-circle article-img" src="{{ product[0].image_url }}">
-          </div>
-          <div class="card-body">
-            <a class="card-title mr-2" href="{{ url_for('product', product_id=product[0].id) }}"><h4>{{ product[0].name }}</h4></a>
-            <p class="card-text">{{ product[0].info }}</p>
-            <p class="card-text">Price : ₹ {{ product[0].price }}</p>
-            <p class="card-text">Count : {{ product[1] }}</p>
-            <div class="card-footer">
-              <a href="{{ url_for('add_to_cart', product_id=product[0].id) }}" class="btn btn-primary">Add</a>
-              <a href="{{ url_for('remove_from_cart', cart_id=product[0].id )}} " class="btn btn-danger">Remove</a>
-            </div>
-          </div>
-        </div>
-    </div>
-    {% endfor %}
-    </div>
+    <legend class="border-bottom mb-4">{{ legend }}</legend>
     <table class="table table-striped table-dark py-5 bg-dark">
       <thead>
         <tr>
@@ -112,16 +91,61 @@
           </tr>
       </tbody>
     </table>
-    <div>
-      <form method="POST" action="/cart/proceed">
+    <form method="POST" action="{{url_for('confirmed')}}">
+        {{ form.hidden_tag() }}
+        <fieldset class="form-group">
+                <div>
+                    <label class="form-control-label-lg">Discount Percentage on Total Amount</label>
+                    <input class="form-control form-control-lg" type="text" name="discount" value={{discount}} readonly>
+                </div>
+                <div>
+                    <p class="lead">Final Bill Amount : {{t*(1-discount*0.01)}}</p>
+                </div>
+            <legend class="border-bottom mb-4">Customer-Information</legend>
+            <div class="form-group">
+                {{ form.customer_name.label(class="form-control-label") }}
+                {% if form.customer_name.errors %}
+                    {{ form.customer_name(class="form-control form-control-lg is-invalid") }}
+                    <div class="invalid-feedback">
+                        {% for error in form.customer_name.errors %}
+                            <span>{{ error }}</span>
+                        {% endfor %}
+                    </div>
+                {% else %}
+                    {{ form.customer_name(class="form-control form-control-lg") }}
+                {% endif %}
+            </div>
+            <div class="form-group">
+                {{ form.email.label(class="form-control-label") }}
+                {% if form.email.errors %}
+                    {{ form.email(class="form-control form-control-lg is-invalid") }}
+                    <div class="invalid-feedback">
+                        {% for error in form.email.errors %}
+                            <span>{{ error }}</span>
+                        {% endfor %}
+                    </div>
+                {% else %}
+                    {{ form.email(class="form-control form-control-lg") }}
+                {% endif %}
+            </div>
+            <div class="form-group">
+                {{ form.phone.label(class="form-control-label") }}
+                {% if form.phone.errors %}
+                    {{ form.phone(class="form-control form-control-lg is-invalid") }}
+                    <div class="invalid-feedback">
+                        {% for error in form.phone.errors %}
+                            <span>{{ error }}</span>
+                        {% endfor %}
+                    </div>
+                {% else %}
+                    {{ form.phone(class="form-control form-control-lg") }}
+                {% endif %}
+            </div>
+        </fieldset>
         <div class="form-group">
-          <label class="form-control-label">Discount</label>
-          <input type="text" class="form-control form-control-lg" id="discount" name="discount" value="0.0">
+            {{ form.submit(class="btn btn-outline-success") }}
         </div>
-        <div><input type="submit" class="btn btn-primary"></div>
-        <br>
-      </form>
-    </div>
+    </form>
   </div>
 </main>
 <footer class="py-5 bg-dark">
