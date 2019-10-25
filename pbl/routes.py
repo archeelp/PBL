@@ -260,7 +260,6 @@ If you did not make this request then simply ignore this email and no changes wi
 
 
 @app.route("/reset_password", methods=['GET', 'POST'])
-@login_required
 def reset_request():
     if current_user.is_authenticated:
         return redirect(url_for('home'))
@@ -274,7 +273,6 @@ def reset_request():
 
 
 @app.route("/reset_password/<token>", methods=['GET', 'POST'])
-@login_required
 def reset_token(token):
     if current_user.is_authenticated:
         return redirect(url_for('home'))
