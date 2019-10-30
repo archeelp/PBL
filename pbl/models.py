@@ -69,7 +69,7 @@ class Bill(db.Model):
     discount = db.Column(db.Float, nullable=False)
     final_price = db.Column(db.Float, nullable=False)
     name = db.Column(db.String(100), nullable=False)
-    email = db.Column(db.String(120), unique=True, nullable=False)
+    email = db.Column(db.String(120), nullable=False)
     phonenumber = db.Column(db.String(10), nullable=False)
     date_created = db.Column(db.DateTime, nullable=False, default=datetime.utcnow)
 

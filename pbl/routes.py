@@ -11,24 +11,39 @@ from flask_mail import Message
 from datetime import datetime
 
 
+def produce_graph():
+    if not current_user.is_authenticated:
+        bills=Bill.query.filter().all()
+        bills=list(filter(lambda x: float((x.date_created - datetime.now()).total_seconds())<604800,bills))
+        newbill={"Mon":0,"Tue":0,"Wed":0,"Thu":0,"Fri":0,"Sat":0,"Sun":0}
+        for x in bills:
+            newbill[x.date_created.strftime("%a")]+=1
+        return newbill
+    else:
+        bills=Bill.query.filter_by(author=current_user)
+        bills=list(filter(lambda x: float((x.date_created - datetime.now()).total_seconds())<604800,bills))
+        newbill={"Mon":0,"Tue":0,"Wed":0,"Thu":0,"Fri":0,"Sat":0,"Sun":0}
+        for x in bills:
+            newbill[x.date_created.strftime("%a")]+=1
+        return newbill
+
+
 @app.route("/")
 @app.route("/home")
 def home():
-    bills=Bill.query.filter().all()
-    bills=list(filter(lambda x: float((x.date_created - datetime.now()).total_seconds())<604800,bills))
-    newbill={"Mon":0,"Tue":0,"Wed":0,"Thu":0,"Fri":0,"Sat":0,"Sun":0}
-    for x in bills:
-        newbill[x.date_created.strftiime("%a")]+=1
-    return render_template('home.html')
+    newbill=produce_graph()
+    return render_template('home.html',newbill=newbill)
 
 
 @app.route("/about")
 def about():
-    return render_template('about.html', title='About')
+    newbill=produce_graph()
+    return render_template('about.html', title='About',newbill=newbill)
 
 
 @app.route("/register", methods=['GET', 'POST'])
 def register():
+    newbill=produce_graph()
     if current_user.is_authenticated:
         return redirect(url_for('home'))
     form = RegistrationForm()
@@ -39,11 +54,12 @@ def register():
         db.session.commit()
         flash('Your account has been created! You are now able to log in', 'success')
         return redirect(url_for('login'))
-    return render_template('register.html', title='Register', form=form)
+    return render_template('register.html', title='Register', form=form,newbill=newbill)
 
 
 @app.route("/login", methods=['GET', 'POST'])
 def login():
+    newbill=produce_graph()
     if current_user.is_authenticated:
         return redirect(url_for('home'))
     form = LoginForm()
@@ -55,7 +71,7 @@ def login():
             return redirect(next_page) if next_page else redirect(url_for('home'))
         else:
             flash('Login Unsuccessful. Please check email and password', 'danger')
-    return render_template('login.html', title='Login', form=form)
+    return render_template('login.html', title='Login', form=form,newbill=newbill)
 
 
 @app.route("/logout")
@@ -82,6 +98,7 @@ def save_picture(form_picture):
 @app.route("/account", methods=['GET', 'POST'])
 @login_required
 def account():
+    newbill=produce_graph()
     form = UpdateAccountForm()
     if form.validate_on_submit():
         if form.picture.data:
@@ -97,12 +114,13 @@ def account():
         form.email.data = current_user.email
     image_file = url_for('static', filename='profile_pics/' + current_user.image_file)
     return render_template('account.html', title='Account',
-                           image_file=image_file, form=form)
+                           image_file=image_file, form=form,newbill=newbill)
 
 
 @app.route("/product/new", methods=['GET', 'POST'])
 @login_required
 def new_product():
+    newbill=produce_graph()
     form = ProductForm()
     if form.validate_on_submit():
         product = Product(name=form.name.data,discount=form.discount.data if form.discount.data else 0.0, price = form.price.data, info = form.info.data, image_url= form.image_url.data, author=current_user)
@@ -112,7 +130,7 @@ def new_product():
         return redirect(url_for('home'))
     form.discount.data=0.0
     return render_template('new_product.html', title='New Product',
-                           form=form, legend='New Product')
+                           form=form, legend='New Product',newbill=newbill)
 
 
 @app.route("/addtocart/<int:product_id>", methods=['GET','POST'])
@@ -145,10 +163,13 @@ def remove_from_cart(cart_id):
 @login_required
 def all_products():
     page = request.args.get('page', 1, type=int)
+    p = list(Product.query.filter_by(author=current_user))
     products = Product.query.filter_by(author=current_user)\
         .order_by(Product.date_created.desc())\
         .paginate(page=page, per_page=16)
-    return render_template('all_products.html', products=products,title="All Products")
+    if len(p)==0:
+        flash('No product present currently . Please add products','info')
+    return render_template('all_products.html', products=products,title="All Products") if len(p)>0 else redirect(url_for('new_product'))
 
 
 @app.route("/cart")
@@ -162,8 +183,10 @@ def cart():
         mrp+=product[0].price*product[1]
         n+=product[1]
         t+=product[0].price*product[1]*(1-product[0].discount*0.01)
-    d=round((1-t/mrp)*100,2)
-    return render_template('cart.html',title="Cart", products=products,mrp=mrp,n=n,t=t,d=d)
+    d = round((1-t/mrp)*100,2) if len(products)>0 else -100
+    if d==-100:
+        flash('You have nothing in cart. Please add some products and then proceed','danger')
+    return render_template('cart.html',title="Cart", products=products,mrp=mrp,n=n,t=t,d=d) if d!=-100 else redirect(url_for('all_products'))
 
 
 @app.route("/cart/proceed",methods=["POST"])
@@ -185,34 +208,75 @@ def proceed():
     return render_template('proceed.html',form=form,products=products,mrp=mrp,n=n,t=t,d=d,discount=discount,title="Summary",legend="Summary")
 
 
+def send_bill_email(emailfrom,emailto,name,url):
+    msg = Message('Bill Copy',
+                  sender=emailfrom,
+                  recipients=[emailto])
+    msg.body = f'''Thanks for shopping at {name}
+    You can view your bill by following the link given below:
+    {url}
+    If you did not make this request then simply ignore this email and no changes will be made.
+'''
+    mail.send(msg)
+
+
 @app.route("/cart/confirmed",methods=["POST"])
 @login_required
 def confirmed():
     form=BillingForm()
+    cart_items = Cart.query.filter_by(author=current_user)
+    pids =[pid.product_id for pid in cart_items]
+    products = [ (Product.query.get(pid),pids.count(pid)) for pid in set(pids)]
+    mrp,n,t=0,0,0
+    for product in products:
+        mrp+=product[0].price*product[1]
+        n+=product[1]
+        t+=product[0].price*product[1]*(1-product[0].discount*0.01)
+    d=round((1-t/mrp)*100,2)
     if form.validate_on_submit():
-            #first crete a bill and then commit to db session
-            #then add the cart items of current user to bill products and then commit
-            #then clear the cart of current user
-            #and we are done here
-            #also we can create an additional route to view all the bills
-            #also we can create an additional route to view a specific the bills
-            #also there is a need to link the graphs to the bills
-            #at the end of this function we need to send mail to user with a link to view specific bill page using smtp
-            flash('Bill created successfully', 'success')
-            return redirect(url_for('home'))
+        total_bill = Bill(name = form.name.data, email = form.email.data, phonenumber = form.phone.data,total=mrp,final_price=t,discount=request.form.get('discount'), author = current_user)
+        db.session.add(total_bill)
+        db.session.commit()
 
+        for item in cart_items:
+            bp = Bill_Products(bill=Bill.query.get(item.id) , product=Product.query.get(item.product_id))
+            db.session.add(bp)
+            db.session.delete(item)
+            db.session.commit()
+        url="http://localhost:5000/bill/"+str(total_bill.id)
+        send_bill_email(current_user.email,form.email.data,current_user.username,url)
+
+        flash('Bill created successfully', 'success')
+        return redirect(url_for('home'))
+        
+    
+@app.route("/bill",methods=["GET","POST"])
+@login_required
+def all_bill(bill_id):
+   bill = Bill_Products.query.filter().all()
+   return render_template('view_all_bills.html',title="Bill", bill = bill)
+
+@app.route("/bill/<int:bill_id>",methods=["GET","POST"])
+@login_required
+def particular_bill(bill_id):
+   bill = Bill_Products.query.get_or_404(bill_id)
+   products = Bill_Products.query.filter_by(bill=bill)
+   products = [ Product.query.get(x.product_id) for x in products ]
+   return render_template('view_particular_bill.html',title="Bill", bill = bill ,products=products)
 
 
 @app.route("/product/<int:product_id>")
 @login_required
 def product(product_id):
+    newbill=produce_graph()
     product = Product.query.get_or_404(product_id)
-    return render_template('product.html', title=product.name, product=product)
+    return render_template('product.html', title=product.name, product=product,newbill=newbill)
 
 
 @app.route("/product/<int:product_id>/update", methods=['GET', 'POST'])
 @login_required
 def update_product(product_id):
+    newbill=produce_graph()
     product = Product.query.get_or_404(product_id)
     if product.author != current_user:
         abort(403)
@@ -231,7 +295,7 @@ def update_product(product_id):
         form.info.data = product.info
         form.image_url.data = product.image_url
     return render_template('new_product.html', title='Update product',
-                           form=form, legend='Update product')
+                           form=form, legend='Update product',newbill=newbill)
 
 
 @app.route("/product/<int:product_id>/delete", methods=['POST'])
@@ -261,6 +325,7 @@ If you did not make this request then simply ignore this email and no changes wi
 
 @app.route("/reset_password", methods=['GET', 'POST'])
 def reset_request():
+    newbill=produce_graph()
     if current_user.is_authenticated:
         return redirect(url_for('home'))
     form = RequestResetForm()
@@ -269,11 +334,12 @@ def reset_request():
         send_reset_email(user)
         flash('An email has been sent with instructions to reset your password.', 'info')
         return redirect(url_for('login'))
-    return render_template('reset_request.html', title='Reset Password', form=form)
+    return render_template('reset_request.html', title='Reset Password', form=form,newbill=newbill)
 
 
 @app.route("/reset_password/<token>", methods=['GET', 'POST'])
 def reset_token(token):
+    newbill=produce_graph()
     if current_user.is_authenticated:
         return redirect(url_for('home'))
     user = User.verify_reset_token(token)
@@ -287,4 +353,4 @@ def reset_token(token):
         db.session.commit()
         flash('Your password has been updated! You are now able to log in', 'success')
         return redirect(url_for('login'))
-    return render_template('reset_token.html', title='Reset Password', form=form)
+    return render_template('reset_token.html', title='Reset Password', form=form,newbill=newbill)
