@@ -1,5 +1,5 @@
 envpy
 .vscode
-pbl\site.db
-pbl\__pycache__
-pbl\__init__.pyc
+pbl/site.db
+pbl/__pycache__
+pbl/__init__.pyc
