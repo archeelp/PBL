@@ -66,7 +66,7 @@ class ProductForm(FlaskForm):
 
 
 class BillingForm(FlaskForm):
-    customer_name = StringField('Name', validators=[DataRequired()])
+    name = StringField('Name', validators=[DataRequired()])
     phone = StringField('Phone', validators=[DataRequired(), Length(10)])
     email = StringField('Email',
                         validators=[DataRequired(), Email()])

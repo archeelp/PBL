@@ -18,7 +18,7 @@ def home():
     bills=list(filter(lambda x: float((x.date_created - datetime.now()).total_seconds())<604800,bills))
     newbill={"Mon":0,"Tue":0,"Wed":0,"Thu":0,"Fri":0,"Sat":0,"Sun":0}
     for x in bills:
-        newbill[x.date_created.strftiime("%a")]+=1
+        newbill[x.date_created.strftime("%a")]+=1
     return render_template('home.html')
 
 
@@ -188,8 +188,37 @@ def proceed():
 @app.route("/cart/confirmed",methods=["POST"])
 @login_required
 def confirmed():
+    discount=0.0
     form=BillingForm()
+    products_id = Cart.query.filter_by(author=current_user)
+    pids =[pid.product_id for pid in products_id]
+    products = [ (Product.query.get(pid),pids.count(pid)) for pid in set(pids)]
+    mrp,n,t=0,0,0
+    for product in products:
+        mrp+=product[0].price*product[1]
+        n+=product[1]
+        t+=product[0].price*product[1]*(1-product[0].discount*0.01)
+    d=round((1-t/mrp)*100,2)
     if form.validate_on_submit():
+        total_bill = Bill(name = form.name.data, email = form.email.data, phonenumber = form.phone.data,total=mrp,final_price=t,discount=d, author = current_user)
+        db.session.add(total_bill)
+        db.session.commit()
+
+
+        cart_items = Cart.query.filter_by(author=current_user)
+
+        for item in cart_items:
+            bp = Bill_Products(bill_id=Bill.query.get(item.id) , product_id=Product.query.get(item.product_id))
+            db.session.add(bp)
+            db.session.delete(item)
+            db.session.commit()
+
+
+        flash('Bill created successfully', 'success')
+        return redirect(url_for('home'))
+
+    return render_template('confirmed.html', title="bill", form=form,products=products, mrp=mrp, n=n, d=d, discount=discount, t = t, legend="Bill")
+
             #first crete a bill and then commit to db session
             #then add the cart items of current user to bill products and then commit
             #then clear the cart of current user
@@ -198,8 +227,16 @@ def confirmed():
             #also we can create an additional route to view a specific the bills
             #also there is a need to link the graphs to the bills
             #at the end of this function we need to send mail to user with a link to view specific bill page using smtp
-            flash('Bill created successfully', 'success')
-            return redirect(url_for('home'))
+        
+    
+
+
+#@app.route("/bill/<int:bill_id>",methods=["GET","POST"])
+#@login_required
+#def particular_bill(bill_id):
+ #   bill = Bill_Products.query.get_or_404(bill_id)
+  #  return render_template('view_particular_bill.html',title="Bill", bill = bill)
+
 
 
 
