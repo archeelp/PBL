@@ -1,0 +1,33 @@
+{% extends "layout.html" %}
+{% block content %}
+    <style>
+        hr {
+            display: block;
+            margin-block-start: auto;
+            margin-block-end: auto;
+            overflow: hidden;
+            border-style: inset;
+            border-width: 1px;
+            width: auto;
+            height: 4px;
+            background-color: #666;
+            margin-left: auto;
+            margin-right: auto;
+        }
+    </style>
+    <div class="jumbotron">
+        <h4 style="font-family: Arial, Helvetica, sans-serif; color:#010608;">Here are the links to all of your
+            bills.</h4>
+        <h5 style="font-family: Arial, Helvetica, sans-serif; color:#ff0055;">Click on the individual links to view
+            any bill.</h5><br>
+        {% for i in bill %}
+        <div class="container-fluid">
+            <p class="col md-8"><a href="/bill/{{ i.id }}">{{ i.id }}st</a> Bill issued on {{ i.date_created }}</p>
+            <hr>
+        </div>
+        {% endfor %}
+    
+    </div>
+
+
+{% endblock content %}

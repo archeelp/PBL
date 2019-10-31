@@ -209,15 +209,18 @@ def proceed():
 
 
 def send_bill_email(emailfrom,emailto,name,url):
-    msg = Message('Bill Copy',
-                  sender=emailfrom,
-                  recipients=[emailto])
-    msg.body = f'''Thanks for shopping at {name}
-    You can view your bill by following the link given below:
-    {url}
-    If you did not make this request then simply ignore this email and no changes will be made.
-'''
-    mail.send(msg)
+    try:
+        msg = Message('Bill Copy',
+                    sender=emailfrom,
+                    recipients=[emailto])
+        msg.body = f'''Thanks for shopping at {name}
+        You can view your bill by following the link given below:
+        {url}
+        If you did not make this request then simply ignore this email and no changes will be made.
+    '''
+        mail.send(msg)
+    except :
+        flash('unable to send mail','danger')
 
 
 @app.route("/cart/confirmed",methods=["POST"])
@@ -252,17 +255,19 @@ def confirmed():
     
 @app.route("/bill",methods=["GET","POST"])
 @login_required
-def all_bill(bill_id):
-   bill = Bill_Products.query.filter().all()
-   return render_template('view_all_bills.html',title="Bill", bill = bill)
+def all_bill():
+    newbill=produce_graph()
+    bill = Bill.query.filter().all()
+    return render_template('view_all_bills.html',title="Bill", bill = bill,newbill=newbill)
 
 @app.route("/bill/<int:bill_id>",methods=["GET","POST"])
 @login_required
 def particular_bill(bill_id):
+   newbill=produce_graph()
    bill = Bill_Products.query.get_or_404(bill_id)
    products = Bill_Products.query.filter_by(bill=bill)
    products = [ Product.query.get(x.product_id) for x in products ]
-   return render_template('view_particular_bill.html',title="Bill", bill = bill ,products=products)
+   return render_template('view_particular_bill.html',title="Bill", bill = bill ,products=products, newbill=newbill)
 
 
 @app.route("/product/<int:product_id>")
