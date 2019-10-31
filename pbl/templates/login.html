@@ -1,5 +1,10 @@
 {% extends "layout.html" %}
 {% block content %}
+    <style>
+        body {
+            background-image: url("../static/Subtle-Prism.svg");
+        }
+    </style>    
     <div class="content-section">
         <form method="POST" action="">
             {{ form.hidden_tag() }}
