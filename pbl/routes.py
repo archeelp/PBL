@@ -163,10 +163,16 @@ def remove_from_cart(cart_id):
 @login_required
 def all_products():
     page = request.args.get('page', 1, type=int)
-    p = list(Product.query.filter_by(author=current_user))
-    products = Product.query.filter_by(author=current_user)\
-        .order_by(Product.date_created.desc())\
-        .paginate(page=page, per_page=16)
+    if request.args.get('search'):
+        p = list(Product.query.whoosh_search(request.args.get('search')))
+        products = Product.query.filter_by(author=current_user)\
+            .order_by(Product.date_created.desc())\
+            .paginate(page=page, per_page=16)
+    else :
+        p = list(Product.query.filter_by(author=current_user))
+        products = Product.query.filter_by(author=current_user)\
+            .order_by(Product.date_created.desc())\
+            .paginate(page=page, per_page=16)
     if len(p)==0:
         flash('No product present currently . Please add products','info')
     return render_template('all_products.html', products=products,title="All Products") if len(p)>0 else redirect(url_for('new_product'))
@@ -235,9 +241,8 @@ def confirmed():
         mrp+=product[0].price*product[1]
         n+=product[1]
         t+=product[0].price*product[1]*(1-product[0].discount*0.01)
-    d=round((1-t/mrp)*100,2)
     if form.validate_on_submit():
-        total_bill = Bill(name = form.name.data, email = form.email.data, phonenumber = form.phone.data,total=mrp,final_price=t,discount=request.form.get('discount'), author = current_user)
+        total_bill = Bill(name = form.name.data, email = form.email.data, phonenumber = form.phone.data,total=mrp,final_price=t*(1-0.01*float(request.form.get('discount'))),discount=request.form.get('discount'), author = current_user)
         db.session.add(total_bill)
         db.session.commit()
 
@@ -257,8 +262,14 @@ def confirmed():
 @login_required
 def all_bill():
     newbill=produce_graph()
-    bill = Bill.query.filter().all()
-    return render_template('view_all_bills.html',title="Bill", bill = bill,newbill=newbill)
+    page = request.args.get('page', 1, type=int)
+    p = list(Bill.query.filter_by(author=current_user))
+    bills = Bill.query.filter_by(author=current_user)\
+        .order_by(Bill.date_created.desc())\
+        .paginate(page=page, per_page=10)
+    if len(p)==0:
+        flash('No bill present','info')
+    return render_template('view_all_bills.html',title="Bill", bills = bills,newbill=newbill) if len(p)>0 else redirect(url_for('home'))
 
 @app.route("/bill/<int:bill_id>",methods=["GET","POST"])
 @login_required

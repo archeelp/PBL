@@ -61,6 +61,13 @@
           {% block content %}{% endblock %}
         </div>
       </div>
+      <form action="/allproducts" method="GET" class="form-inline">
+        <div class="form-group">
+            <input type="text" name="search" placeholder="Search" class="form-control">
+            <input type="submit" value="Search" class="btn btn-search">
+        </div>
+    </form>
+    <br>
     <div class="row text-center">
     {% for product in products.items %}
     <div class="col-lg-3 col-md-6 mb-4">

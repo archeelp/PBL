@@ -1,33 +1,29 @@
 {% extends "layout.html" %}
 {% block content %}
-    <style>
-        hr {
-            display: block;
-            margin-block-start: auto;
-            margin-block-end: auto;
-            overflow: hidden;
-            border-style: inset;
-            border-width: 1px;
-            width: auto;
-            height: 4px;
-            background-color: #666;
-            margin-left: auto;
-            margin-right: auto;
-        }
-    </style>
-    <div class="jumbotron">
-        <h4 style="font-family: Arial, Helvetica, sans-serif; color:#010608;">Here are the links to all of your
-            bills.</h4>
-        <h5 style="font-family: Arial, Helvetica, sans-serif; color:#ff0055;">Click on the individual links to view
-            any bill.</h5><br>
-        {% for i in bill %}
-        <div class="container-fluid">
-            <p class="col md-8"><a href="/bill/{{ i.id }}">{{ i.id }}st</a> Bill issued on {{ i.date_created }}</p>
-            <hr>
-        </div>
-        {% endfor %}
-    
-    </div>
-
-
+    {% for bill in bills.items %}
+        <article class="media content-section">
+          <div class="media-body">
+            <div class="article-metadata">
+              <a class="mr-2" href="{{ url_for('particular_bill', bill_id=bill.id) }}">BILL ID : {{ bill.id }}</a>
+              <small class="text-muted">{{ bill.date_created.strftime('%Y-%m-%d') }}</small>
+            </div>
+            <div class="article-footer">
+                <p>Name : <b>{{ bill.name }}</b></p>
+                <p>Email : <b>{{ bill.email }}</b></p>
+                <p class="article-content">Final Amount : <b>{{ bill.final_price }}</b></p>
+            </div>
+          </div>
+        </article>
+    {% endfor %}
+    {% for page_num in bills.iter_pages(left_edge=1, right_edge=1, left_current=1, right_current=2) %}
+      {% if page_num %}
+        {% if bills.page == page_num %}
+          <a class="btn btn-info mb-4" href="{{ url_for('home', page=page_num) }}">{{ page_num }}</a>
+        {% else %}
+          <a class="btn btn-outline-info mb-4" href="{{ url_for('home', page=page_num) }}">{{ page_num }}</a>
+        {% endif %}
+      {% else %}
+        ...
+      {% endif %}
+    {% endfor %}
 {% endblock content %}
