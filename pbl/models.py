@@ -1,6 +1,6 @@
 from datetime import datetime
 from itsdangerous import TimedJSONWebSignatureSerializer as Serializer
-from pbl import db, login_manager , app , wa
+from pbl import db, login_manager , app 
 from flask_login import UserMixin
 
 
@@ -37,7 +37,6 @@ class User(db.Model, UserMixin):
 
 
 class Product(db.Model):
-    __searchable__=['id','name','info']
     id = db.Column(db.Integer, primary_key=True)
     name = db.Column(db.String(100), nullable=False)
     price = db.Column(db.Float, nullable=False)
@@ -52,7 +51,6 @@ class Product(db.Model):
     def __repr__(self):
         return f"Product('{self.name}', '{self.date_created}' , '{self.price}')"
 
-wa.whoosh_index(app,Product)
 
 class Cart(db.Model):
     id = db.Column(db.Integer, primary_key=True)
@@ -86,3 +84,4 @@ class Bill_Products(db.Model):
 
     def __repr__(self):
         return f"Bill_Product('{self.bill_id}','{self.product_id}')"
+

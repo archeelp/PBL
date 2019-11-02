@@ -158,16 +158,23 @@ def remove_from_cart(cart_id):
     flash('Product deleted from cart', 'success')
     return redirect(url_for('cart'))
 
+def search_product(product,q):
+    if q in product.name or q in product.info :
+        return True
+    elif q.isnumeric() :
+        if float(q)==product.id or float(q)==product.price :
+            return True
+    else:
+        return False
 
 @app.route("/allproducts")
 @login_required
 def all_products():
     page = request.args.get('page', 1, type=int)
     if request.args.get('search'):
-        p = list(Product.query.whoosh_search(request.args.get('search')))
-        products = Product.query.filter_by(author=current_user)\
-            .order_by(Product.date_created.desc())\
-            .paginate(page=page, per_page=16)
+        products = list(filter(lambda product : search_product(product,request.args.get('search')),Product.query.filter_by(author=current_user)))
+        print(products)
+        return render_template('all_products.html', products=products,title="Searched Product",disabled=True)
     else :
         p = list(Product.query.filter_by(author=current_user))
         products = Product.query.filter_by(author=current_user)\
@@ -175,7 +182,7 @@ def all_products():
             .paginate(page=page, per_page=16)
     if len(p)==0:
         flash('No product present currently . Please add products','info')
-    return render_template('all_products.html', products=products,title="All Products") if len(p)>0 else redirect(url_for('new_product'))
+    return render_template('all_products.html', products=products,title="All Products",disabled = False) if len(p)>0 else redirect(url_for('new_product'))
 
 
 @app.route("/cart")
