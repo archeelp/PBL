@@ -1,1 +1,54 @@
-{{bill}}
+{% extends "layout.html" %}
+{% block content %}
+
+    <article class="media content-section">
+        <div class="media-body">
+            <div class="article-metadata">
+                <h2 class="article-title">BILL ID : {{ details.id }}</h2>
+                <a class="mr-2" href="{{ url_for('all_bill') }}">View all bills</a>
+            </div>
+            <div class="article-footer">
+                <p class="article-content">Name : <b>{{ details.name }}</b></p>
+                <p class="article-content">Email : <b>{{ details.email }}</b></p>
+                <p class="article-content">Number : <b>{{ details.phonenumber }}</b></p>
+                
+                <ul>
+                    <table class="table table-striped table-dark py-5 bg-dark">
+            <thead>
+                <tr>
+                    <th scope="col">Name</th>
+                    <th scope="col">MRP</th>
+                    <th scope="col">Quantity</th>
+                    <th scope="col">Disc</th>
+                    <th scope="col">Total</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for product in products %}
+                <tr>
+                    <td> {{product[0].name}}</td>
+                    <td> ₹ {{product[0].price}}</td>
+                    <td> {{product[1]}}</td>
+                    <td> {{product[0].discount}} %</td>
+                    <td> {{ product[1]*product[0].price*(1-product[0].discount*0.01) }}</td>
+                </tr>
+                {% endfor %}
+                <tr>
+                    <td> TOTAL</td>
+                    <td> ₹ {{mrp}}</td>
+                    <td> {{quantity}} </td>
+                    <td> {{discount}} %</td>
+                    <td> {{total}}</td>
+                </tr>
+            </tbody>
+        </table>
+                </ul>
+                
+            </div>
+        </div>
+    </article>
+
+
+{% endblock content %}
+
+

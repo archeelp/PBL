@@ -165,6 +165,7 @@ def search_product(product,q):
         if float(q)==product.id or float(q)==product.price :
             return True
     else:
+        flash('Product not found. Please add the product first to search!','info')
         return False
 
 @app.route("/allproducts")
@@ -173,6 +174,8 @@ def all_products():
     page = request.args.get('page', 1, type=int)
     if request.args.get('search'):
         products = list(filter(lambda product : search_product(product,request.args.get('search')),Product.query.filter_by(author=current_user)))
+        #if len(products)==0:
+            #return redirect(url_for(new_product))
         print(products)
         return render_template('all_products.html', products=products,title="Searched Product",disabled=True)
     else :
@@ -263,17 +266,38 @@ def confirmed():
 
         flash('Bill created successfully', 'success')
         return redirect(url_for('home'))
-        
+
+
+
+def search_bill(bill,q):
+    if q in bill.name :
+        return True
+    elif q.isnumeric() :
+        if float(q)==bill.id or float(q)==bill.final_price :
+            return True
+    else:
+        flash('Bill not found.','info')
+        return False
+
+
+
     
 @app.route("/bill",methods=["GET","POST"])
 @login_required
 def all_bill():
     newbill=produce_graph()
     page = request.args.get('page', 1, type=int)
-    p = list(Bill.query.filter_by(author=current_user))
-    bills = Bill.query.filter_by(author=current_user)\
-        .order_by(Bill.date_created.desc())\
-        .paginate(page=page, per_page=10)
+    if request.args.get('search'):
+        bills = list(filter(lambda product : search_bill(bill,request.args.get('search')),Bill.query.filter_by(author=current_user)))
+        #if len(products)==0:
+            #return redirect(url_for(new_product))
+        print(bills)
+        return render_template('view_all_bills.html', bills=bills,title="Searched Bill",disabled=True,newbill=newbill)
+    else:    
+        p = list(Bill.query.filter_by(author=current_user))
+        bills = Bill.query.filter_by(author=current_user)\
+            .order_by(Bill.date_created.desc())\
+            .paginate(page=page, per_page=10)
     if len(p)==0:
         flash('No bill present','info')
     return render_template('view_all_bills.html',title="Bill", bills = bills,newbill=newbill) if len(p)>0 else redirect(url_for('home'))
@@ -281,11 +305,22 @@ def all_bill():
 @app.route("/bill/<int:bill_id>",methods=["GET","POST"])
 @login_required
 def particular_bill(bill_id):
-   newbill=produce_graph()
-   bill = Bill_Products.query.get_or_404(bill_id)
-   products = Bill_Products.query.filter_by(bill=bill)
-   products = [ Product.query.get(x.product_id) for x in products ]
-   return render_template('view_particular_bill.html',title="Bill", bill = bill ,products=products, newbill=newbill)
+    newbill=produce_graph()
+    details = Bill.query.get_or_404(bill_id)
+    products = Bill_Products.query.filter_by(bill=details)
+    products = [ Product.query.get(x.product_id) for x in products ]
+    products = [ (x,products.count(x)) for x in set(products) ]
+    quantity=0
+    total=0
+    discount=0
+    mrp=0
+    for product in products:
+        quantity+=product[1]
+        total+=product[1]*product[0].price*(1-product[0].discount*0.01)
+        mrp+=product[0].price
+    #discount=(mrp*quantity-total)/(mrp*quantity)*100    
+
+    return render_template('view_particular_bill.html',title="Bill" , quantity=quantity, total=total,mrp=mrp, details=details, products=products, newbill=newbill)
 
 
 @app.route("/product/<int:product_id>")
@@ -307,6 +342,7 @@ def update_product(product_id):
     if form.validate_on_submit():
         product.name = form.name.data
         product.price = form.price.data
+        product.discount = form.discount.data
         product.info = form.info.data
         product.image_url = form.image_url.data
         db.session.commit()
@@ -315,6 +351,7 @@ def update_product(product_id):
     elif request.method == 'GET':
         form.name.data = product.name
         form.price.data = product.price
+        form.discount.data = product.discount 
         form.info.data = product.info
         form.image_url.data = product.image_url
     return render_template('new_product.html', title='Update product',

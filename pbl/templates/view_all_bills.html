@@ -1,8 +1,17 @@
 {% extends "layout.html" %}
 {% block content %}
+    <form action="/bill" method="GET" class="form-inline">
+      <div class="form-group">
+        <input type="text" name="search" placeholder="Search" class="form-control">
+        <input type="submit" value="Search" class="btn btn-search">
+      </div>
+    </form>
+    <br>
+    <br>
     {% for bill in bills.items %}
         <article class="media content-section">
           <div class="media-body">
+            <div class="jumbotron">
             <div class="article-metadata">
               <a class="mr-2" href="{{ url_for('particular_bill', bill_id=bill.id) }}">BILL ID : {{ bill.id }}</a>
               <small class="text-muted">{{ bill.date_created.strftime('%Y-%m-%d') }}</small>
@@ -12,8 +21,10 @@
                 <p>Email : <b>{{ bill.email }}</b></p>
                 <p class="article-content">Final Amount : <b>{{ bill.final_price }}</b></p>
             </div>
+            </div>
           </div>
         </article>
+      
     {% endfor %}
     {% for page_num in bills.iter_pages(left_edge=1, right_edge=1, left_current=1, right_current=2) %}
       {% if page_num %}
