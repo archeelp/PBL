@@ -261,7 +261,8 @@ def confirmed():
             db.session.add(bp)
             db.session.delete(item)
             db.session.commit()
-        url="http://localhost:5000/bill/"+str(total_bill.id)
+        #http://localhost:5000/bill/
+        url="https://deploy-pbl.herokuapp.com/bill/"+str(total_bill.id)
         send_bill_email(current_user.email,form.email.data,current_user.username,url)
 
         flash('Bill created successfully', 'success')
@@ -307,9 +308,9 @@ def all_bill():
 def particular_bill(bill_id):
     newbill=produce_graph()
     details = Bill.query.get_or_404(bill_id)
-    print("details",details.id)
+    #print("details",details.id)
     products = Bill_Products.query.filter_by(id=details.id)
-    print("products", products)
+    #print("products", products)
     products = [ Product.query.get(x.product_id) for x in products ]
     products = [ (x,products.count(x)) for x in set(products) ]
     
