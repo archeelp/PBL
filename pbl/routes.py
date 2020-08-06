@@ -307,9 +307,12 @@ def all_bill():
 def particular_bill(bill_id):
     newbill=produce_graph()
     details = Bill.query.get_or_404(bill_id)
-    products = Bill_Products.query.filter_by(bill=details)
+    print("details",details.id)
+    products = Bill_Products.query.filter_by(id=details.id)
+    print("products", products)
     products = [ Product.query.get(x.product_id) for x in products ]
     products = [ (x,products.count(x)) for x in set(products) ]
+    
     quantity=0
     total=0
     discount=0
